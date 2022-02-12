@@ -1,4 +1,5 @@
 import { identity } from './identity'
+import { noop } from './noop'
 import { throws } from './throws'
 import { Nullable } from './types/nullable'
 
@@ -52,7 +53,7 @@ export interface Option<T> {
    * @param f
    * The function to apply on the inner value.
    */
-  forEach(f: (t: T) => void): this
+  forEach(f: (t: T) => void): void
 
   /**
    * Unwraps the inner value if `Some(T)`, throws an error if `None`.
@@ -150,13 +151,10 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
       return isSome ? patterns.Some(value) : patterns.None()
     },
 
-    forEach(f: (t: T) => void): Option<T> {
+    forEach(f: (t: T) => void): void {
       return this.match({
-        Some: (t) => {
-          f(t)
-          return this
-        },
-        None: () => this,
+        Some: f,
+        None: noop,
       })
     },
 
