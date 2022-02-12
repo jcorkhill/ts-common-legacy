@@ -28,6 +28,15 @@ export interface Option<T> {
   chain<U>(f: (t: T) => Option<U>): Option<U>
 
   /**
+   * Executes the given predicate function if the current Option is a `Some(T)`,
+   * returns `None` otherwise.
+   *
+   * If the predicate evaluates to `true`, returns the current option. If the
+   * predicate evaluates to `false`, returns `None`.
+   */
+  filter(f: (t: T) => boolean): Option<T>
+
+  /**
    * Executes the variant arm that matches the current Option.
    *
    * This function can be used to leave the current monadic context.
@@ -126,6 +135,13 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
     chain<U>(f: (t: T) => Option<U>): Option<U> {
       return this.match({
         Some: (t) => f(t),
+        None: none,
+      })
+    },
+
+    filter(f: (t: T) => boolean): Option<T> {
+      return this.match({
+        Some: (t) => (f(t) ? this : none()),
         None: none,
       })
     },

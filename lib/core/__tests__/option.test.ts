@@ -60,6 +60,41 @@ describe('chain', () => {
   })
 })
 
+describe('filter', () => {
+  test('option.filter of None returns None', () => {
+    // Arrange
+    const original = none() as Option<number>
+
+    // Act
+    const result = original.filter((x) => x > 0)
+
+    // Assert
+    expect(result.isNone()).toEqual(true)
+  })
+
+  test('option.filter of Some returns itself when filter is satisfied', () => {
+    // Arrange
+    const original = some(2)
+
+    // Act
+    const result = original.filter((x) => x > 0)
+
+    // Assert
+    expect(result).toBe(original)
+  })
+
+  test('option.filter of Some returns None when filter fails', () => {
+    // Arrange
+    const original = some(2)
+
+    // Act
+    const result = original.filter((x) => x < 0)
+
+    // Assert
+    expect(result.isNone()).toEqual(true)
+  })
+})
+
 describe('match', () => {
   test('option.match of Some returns the value of the "Some" arm', () => {
     // Arrange
