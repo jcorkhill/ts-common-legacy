@@ -10,7 +10,7 @@ describe('map', () => {
     const mapped = original.map((x) => x * 2)
 
     // Assert
-    expect(mapped.unwrap()).toBe(4)
+    expect(mapped.unwrap()).toEqual(4)
   })
 
   test('option.map of None returns None', () => {
@@ -34,7 +34,7 @@ describe('chain', () => {
     const chained = original.chain((x) => some(x * 2))
 
     // Assert
-    expect(chained.unwrap()).toBe(4)
+    expect(chained.unwrap()).toEqual(4)
   })
 
   test('option.chain of None returns None', () => {
@@ -69,7 +69,7 @@ describe('filter', () => {
     const result = original.filter((x) => x > 0)
 
     // Assert
-    expect(result.isNone()).toEqual(true)
+    expect(result.isNone()).toBe(true)
   })
 
   test('option.filter of Some returns itself when filter is satisfied', () => {
@@ -108,7 +108,7 @@ describe('match', () => {
     })
 
     // Assert
-    expect(result).toBe(value)
+    expect(result).toEqual(value)
   })
 
   test('option.match of None returns the value of the "None" arm', () => {
@@ -122,7 +122,7 @@ describe('match', () => {
     })
 
     // Assert
-    expect(result).toBe(4)
+    expect(result).toEqual(4)
   })
 })
 
