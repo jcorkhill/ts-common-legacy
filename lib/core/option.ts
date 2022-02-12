@@ -64,13 +64,13 @@ export interface Option<T> {
   unwrap(): T
 
   /**
-   * Unwraps the inner value if `Some(T)`, returns the specified default if 
+   * Unwraps the inner value if `Some(T)`, returns the specified default if
    * `None`.
-   * 
+   *
    * Prefer `match` or methods that remain within the `monadic` context over
    * this method.
-
-   * @param t 
+   *
+   * @param t
    * The default value to return if the Option is `None`.
    */
   unwrapOr(t: T): T
