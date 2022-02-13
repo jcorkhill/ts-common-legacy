@@ -286,8 +286,98 @@ describe('toOption', () => {
   })
 })
 
-// TODO: Add test cases for higher-order option methods.
+describe('higher-order option functions', () => {
+  describe('chain', () => {
+    test('Option.chain of Some maps and flattens the result', () => {
+      expect(
+        testPipe(
+          fromNumber(2),
+          Option.chain((x) => some(x * 2))
+        ).unwrap()
+      ).toEqual(4)
+    })
+
+    test('Option.chain of None returns None', () => {
+      expect(
+        testPipe(
+          fromNumber(-1),
+          Option.chain((x) => some(x * 2))
+        ).isNone()
+      ).toBe(true)
+    })
+
+    test('Option.chain of Some mapping to None returns None', () => {
+      expect(testPipe(fromNumber(2), Option.chain(none)).isNone()).toBe(true)
+    })
+  })
+
+  describe('chainAsync', () => {
+    test('Option.chainAsync of Some maps and flattens the result', async () => {
+      expect(
+        await testPipe(
+          fromNumber(2),
+          Option.chainAsync(async (x) => some(x * 2))
+        ).then(Option.unwrap())
+      ).toEqual(4)
+    })
+
+    test('Option.chainAsync of None returns None', async () => {
+      expect(
+        await testPipe(
+          fromNumber(-1),
+          Option.chainAsync(async (x) => some(x * 2))
+        ).then(Option.isNone())
+      ).toBe(true)
+    })
+
+    test('Option.chainAsync of Some mapping to None returns None', async () => {
+      expect(
+        await testPipe(
+          fromNumber(2),
+          Option.chainAsync(async () => none())
+        ).then(Option.isNone())
+      ).toBe(true)
+    })
+  })
+
+  describe('unwrap', () => {
+    test('Option.unwrap of Some unwraps the inner value', () => {
+      expect(testPipe(fromNumber(2), Option.unwrap())).toEqual(2)
+    })
+
+    test('Option.unwrap of None throws an error', () => {
+      expect(() => testPipe(fromNumber(-1), Option.unwrap())).toThrowError()
+    })
+  })
+
+  describe('isNone', () => {
+    test('option.isNone of Some should return false', () => {
+      expect(testPipe(fromNumber(2), Option.isNone())).toBe(false)
+    })
+
+    test('option.isNone of None should return true', () => {
+      expect(testPipe(fromNumber(-1), Option.isNone())).toBe(true)
+    })
+  })
+
+  describe('isSome', () => {
+    test('option.isSome of Some should return true', () => {
+      expect(testPipe(fromNumber(2), Option.isSome())).toBe(true)
+    })
+
+    test('option.isSome of None should return false', () => {
+      expect(testPipe(fromNumber(-1), Option.isSome())).toBe(false)
+    })
+  })
+})
 
 function fromNumber(x: number) {
   return x > 0 ? some(x) : none()
+}
+
+function testPipe<R1>(
+  o: Option<number>,
+  operatorOne: OptionOperator<number, R1>
+) {
+  return operatorOne(o)
 }
