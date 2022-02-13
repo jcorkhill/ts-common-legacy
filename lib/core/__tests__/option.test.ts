@@ -1,5 +1,5 @@
 import { identity } from '../identity'
-import { Option, none, some, OptionOperator } from '../option'
+import { Option, none, some, OptionOperator, toOption } from '../option'
 
 describe('map', () => {
   test('option.map of Some maps the inner value correctly', () => {
@@ -261,6 +261,32 @@ describe('isSome', () => {
     expect(fromNumber(-1).isSome()).toBe(false)
   })
 })
+
+describe('toOption', () => {
+  test('should convert null to None', () => {
+    expect(toOption(null).isNone()).toBe(true)
+  })
+
+  test('should convert undefined to None', () => {
+    expect(toOption(undefined).isNone()).toBe(true)
+  })
+
+  test('should convert empty string to None', () => {
+    expect(toOption('').isNone()).toBe(true)
+  })
+
+  test('should convert all other values to Some', () => {
+    // TODO: Use property test here instead.
+    expect(toOption(0).isSome()).toBe(true)
+    expect(toOption({}).isSome()).toBe(true)
+    expect(toOption(true).isSome()).toBe(true)
+    expect(toOption(false).isSome()).toBe(true)
+    expect(toOption('hello').isSome()).toBe(true)
+    expect(toOption(10).isSome()).toBe(true)
+  })
+})
+
+// TODO: Add test cases for higher-order option methods.
 
 function fromNumber(x: number) {
   return x > 0 ? some(x) : none()

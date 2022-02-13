@@ -384,3 +384,29 @@ export const Option: IOptionHigherOrderFunctions = {
     return (o: Option<T>) => o.isSome()
   },
 }
+
+/**
+ * Lifts the given value into an `Option<T>` based on the following criteria.
+ * 
+ * If the value is `null` - `None`.
+ * if the value is `undefined` - `None`.
+ * If the value is an empty string - `None`.
+ * Otherwise - `Some`.
+ * 
+ * @param value 
+ * The value to lift into an Option.
+
+ * @returns 
+ * An `Option<T>`.
+ */
+export function toOption<T>(value: T | null | undefined): Option<T> {
+  if (value === null || value === undefined) {
+    return none()
+  }
+
+  if (typeof value === 'string' && value.length === 0) {
+    return none()
+  }
+
+  return some(value)
+}
