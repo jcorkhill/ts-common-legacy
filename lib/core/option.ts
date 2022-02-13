@@ -1,6 +1,7 @@
 import { identity } from './identity'
 import { noop } from './noop'
 import { throws } from './throws'
+import { UnaryFunction } from './types/funcs'
 import { Nullable } from './types/nullable'
 
 /**
@@ -210,4 +211,92 @@ export function some<T>(value: T): Option<T> {
  */
 export function none(): Option<never> {
   return createOption(null as never)
+}
+
+/**
+ * Helper for representing a function of type:
+ *
+ * ```
+ * (o: Option<TOptionInnerValue>) => TResult
+ * ```
+ */
+export type OptionOperator<TOptionInnerValue, TResult> = UnaryFunction<
+  Option<TOptionInnerValue>,
+  TResult
+>
+
+/**
+ * Signatures for higher-order option functions for use in
+ * pipeline operations.
+ */
+interface IOptionHigherOrderFunctions {
+  /**
+   * Performs the mapping operation `f` and flattens the result if the
+   * inner value is `Some(T)`.
+   *
+   * @param f
+   * A function that maps inner value `T` to `Option<U>` if `T` is
+   * `Some`.
+   */
+  chain<T, U>(f: (t: T) => Option<U>): OptionOperator<T, Option<U>>
+
+  /**
+   * Performs the asynchronous mapping operation `f` and flattens the result
+   * if the inner value is `Some(T)`.
+   *
+   * @param f
+   * A function that maps inner value `T` to `Option<U>` if `T` is
+   * `Some(T)`.
+   */
+  chainAsync<T, U>(
+    f: (t: T) => Promise<Option<U>>
+  ): OptionOperator<T, Promise<Option<U>>>
+
+  /**
+   * Unwraps the inner value if `Some(T)`, throws an error if `None`.
+   *
+   * Prefer `match` or methods that remain within the `monadic` context over
+   * this method.
+   */
+  unwrap<T>(): OptionOperator<T, T>
+
+  /**
+   * Indicates whether the Option is `None(T)`.
+   */
+  isNone<T>(): OptionOperator<T, boolean>
+
+  /**
+   * Indicates whether the Option is `Some(T)`.
+   */
+  isSome<T>(): OptionOperator<T, boolean>
+}
+
+/**
+ * Higher order Option Monad methods. Useful for pipeline
+ * operations.
+ */
+export const Option: IOptionHigherOrderFunctions = {
+  chain<T, U>(f: (t: T) => Option<U>) {
+    return (o: Option<T>) => o.chain(f)
+  },
+
+  chainAsync<T, U>(f: (t: T) => Promise<Option<U>>) {
+    return (o: Option<T>) =>
+      o.match({
+        Some: f,
+        None: () => Promise.resolve(none()),
+      })
+  },
+
+  unwrap<T>() {
+    return (o: Option<T>) => o.unwrap()
+  },
+
+  isNone<T>() {
+    return (o: Option<T>) => o.isNone()
+  },
+
+  isSome<T>() {
+    return (o: Option<T>) => o.isSome()
+  },
 }
