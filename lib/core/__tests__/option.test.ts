@@ -1,226 +1,242 @@
 import { identity } from '../identity'
-import { Option, none, some } from '../option'
+import { Option, none, some, OptionOperator } from '../option'
 
 describe('map', () => {
   test('option.map of Some maps the inner value correctly', () => {
-    // Arrange
-    const original = some(2)
-
-    // Act
-    const mapped = original.map((x) => x * 2)
-
-    // Assert
-    expect(mapped.unwrap()).toEqual(4)
+    expect(
+      fromNumber(2)
+        .map((x) => x * 2)
+        .unwrap()
+    ).toEqual(4)
   })
 
   test('option.map of None returns None', () => {
-    //  Arrange
-    const original = none() as Option<number>
+    expect(
+      fromNumber(-1)
+        .map((x) => x * 2)
+        .isNone()
+    ).toBe(true)
+  })
+})
 
-    // Act
-    const mapped = original.map((x) => x * 2)
+describe('mapAsync', () => {
+  test('option.mapAsync of Some maps the inner value correctly', async () => {
+    expect(
+      await fromNumber(2)
+        .mapAsync((x) => Promise.resolve(x * 2))
+        .then(Option.unwrap())
+    ).toEqual(4)
+  })
 
-    // Assert
-    expect(mapped.isNone()).toBe(true)
+  test('option.mapAsync of None returns None', async () => {
+    expect(
+      await fromNumber(-1)
+        .mapAsync((x) => Promise.resolve(x * 2))
+        .then(Option.isNone())
+    ).toBe(true)
   })
 })
 
 describe('chain', () => {
   test('option.chain of Some maps and flattens the result', () => {
-    // Arrange
-    const original = some(2)
-
-    // Act
-    const chained = original.chain((x) => some(x * 2))
-
-    // Assert
-    expect(chained.unwrap()).toEqual(4)
+    expect(
+      fromNumber(2)
+        .chain((x) => some(x * 2))
+        .unwrap()
+    ).toEqual(4)
   })
 
   test('option.chain of None returns None', () => {
-    // Arrange
-    const original = none() as Option<number>
-
-    // Act
-    const chained = original.chain((x) => some(x * 4))
-
-    // Assert
-    expect(chained.isNone()).toBe(true)
+    expect(
+      fromNumber(-1)
+        .chain((x) => some(x * 2))
+        .isNone()
+    ).toBe(true)
   })
 
   test('option.chain of Some mapping to None returns None', () => {
-    // Arrange
-    const original = some(2)
+    expect(fromNumber(2).chain(none).isNone()).toBe(true)
+  })
+})
 
-    // Act
-    const chained = original.chain(none)
+describe('chainAsync', () => {
+  test('option.chainAsync of Some maps and flattens the result', async () => {
+    expect(
+      await fromNumber(2)
+        .chainAsync(async (x) => some(x * 2))
+        .then(Option.unwrap())
+    ).toEqual(4)
+  })
 
-    // Assert
-    expect(chained.isNone()).toBe(true)
+  test('option.chainAsync of None returns None', async () => {
+    expect(
+      await fromNumber(-1)
+        .chainAsync(async (x) => some(x * 2))
+        .then(Option.isNone())
+    ).toBe(true)
+  })
+
+  test('option.chainAsync of Some mapping to None returns None', async () => {
+    expect(
+      await fromNumber(2)
+        .chainAsync(async () => none())
+        .then(Option.isNone())
+    ).toBe(true)
   })
 })
 
 describe('filter', () => {
   test('option.filter of None returns None', () => {
-    // Arrange
-    const original = none() as Option<number>
-
-    // Act
-    const result = original.filter((x) => x > 0)
-
-    // Assert
-    expect(result.isNone()).toBe(true)
+    expect(
+      fromNumber(-1)
+        .filter((x) => x > 0)
+        .isNone()
+    ).toBe(true)
   })
 
   test('option.filter of Some returns itself when filter is satisfied', () => {
-    // Arrange
-    const original = some(2)
-
-    // Act
-    const result = original.filter((x) => x > 0)
-
-    // Assert
-    expect(result).toBe(original)
+    const original = fromNumber(2)
+    expect(original.filter((x) => x > 0)).toBe(original)
   })
 
   test('option.filter of Some returns None when filter fails', () => {
-    // Arrange
-    const original = some(2)
+    expect(
+      fromNumber(2)
+        .filter((x) => x < 0)
+        .isNone()
+    ).toBe(true)
+  })
+})
 
-    // Act
-    const result = original.filter((x) => x < 0)
+describe('filterAsync', () => {
+  test('option.filterAsync of None returns None', async () => {
+    expect(
+      await fromNumber(-1)
+        .filterAsync(async (x) => x > 0)
+        .then(Option.isNone())
+    ).toBe(true)
+  })
 
-    // Assert
-    expect(result.isNone()).toEqual(true)
+  test('option.filterAsync of Some returns itself when filter is satisfied', async () => {
+    const original = fromNumber(2)
+    expect(await original.filterAsync(async (x) => x > 0)).toBe(original)
+  })
+
+  test('option.filterAsync of Some returns None when filter fails', async () => {
+    expect(
+      await fromNumber(2)
+        .filterAsync(async (x) => x < 0)
+        .then(Option.isNone())
+    ).toBe(true)
   })
 })
 
 describe('match', () => {
   test('option.match of Some returns the value of the "Some" arm', () => {
     // Arrange
-    const value = 2
-    const option = some(value)
-
-    // Act
-    const result = option.match({
-      Some: identity,
-      None: () => 0,
-    })
-
-    // Assert
-    expect(result).toEqual(value)
+    expect(
+      fromNumber(2).match({
+        Some: identity,
+        None: () => 0,
+      })
+    ).toEqual(2)
   })
 
   test('option.match of None returns the value of the "None" arm', () => {
-    // Arrange
-    const option = none() as Option<number>
-
-    // Act
-    const result = option.match({
-      Some: identity,
-      None: () => 4,
-    })
-
-    // Assert
-    expect(result).toEqual(4)
+    expect(
+      fromNumber(-1).match({
+        Some: identity,
+        None: () => 4,
+      })
+    ).toEqual(4)
   })
 })
 
 describe('forEach', () => {
   test('option.forEach of Some runs the function once for the inner value', () => {
-    // Arrange
-    const option = some(4)
     const fn = jest.fn()
+    fromNumber(2).forEach(fn)
 
-    // Act
-    option.forEach(fn)
-
-    // Assert
     expect(fn).toHaveBeenCalledTimes(1)
-    expect(fn).toHaveBeenCalledWith(4)
+    expect(fn).toHaveBeenCalledWith(2)
   })
 
   test('option.forEach of None never runs the function', () => {
-    // Arrange
-    const option = none() as Option<number>
     const fn = jest.fn()
+    fromNumber(-1).forEach(fn)
 
-    // Act
-    option.forEach(fn)
+    expect(fn).toHaveBeenCalledTimes(0)
+  })
+})
 
-    // Assert
+describe('forEachAsync', () => {
+  test('option.forEachAsync of Some runs the function once for the inner value', async () => {
+    const fn = jest.fn()
+    fromNumber(2).forEachAsync(fn)
+
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(fn).toHaveBeenCalledWith(2)
+  })
+
+  test('option.forEachAsync of None never runs the function', () => {
+    const fn = jest.fn()
+    fromNumber(-1).forEachAsync(fn)
+
     expect(fn).toHaveBeenCalledTimes(0)
   })
 })
 
 describe('unwrap', () => {
   test('option.unwrap of Some unwraps the inner value', () => {
-    // Arrange
-    const option = some(2)
-
-    // Act
-    const result = option.unwrap()
-
-    // Assert
-    expect(result).toEqual(2)
+    expect(fromNumber(2).unwrap()).toEqual(2)
   })
 
   test('option.unwrap of None throws an error', () => {
-    // Arrange
-    const option = none()
-
-    // Act, Assert
-    expect(() => option.unwrap()).toThrowError()
+    expect(() => fromNumber(-1).unwrap()).toThrowError()
   })
 })
 
 describe('unwrapOr', () => {
   test('option.unwrapOr of Some unwraps the inner value', () => {
-    // Arrange
-    const option = some(2)
-
-    // Act
-    const result = option.unwrapOr(4)
-
-    // Assert
-    expect(result).toEqual(2)
+    expect(fromNumber(2).unwrapOr(4)).toEqual(2)
   })
 
   test('option.unwrapOr of None returns the fallback value', () => {
-    // Arrange
-    const option = none() as Option<number>
-
-    // Act
-    const result = option.unwrapOr(4)
-
-    // Assert
-    expect(result).toEqual(result)
+    expect(fromNumber(-1).unwrapOr(4)).toEqual(4)
   })
 })
 
-describe('unwrapOrDo', () => {
-  test('option.unwrapOrDo of Some unwraps the inner value and does nothing', () => {
-    // Arrange
-    const option = some(2)
+describe('unwrapOrElse', () => {
+  test('option.unwrapOrElse of Some unwraps the inner value and does nothing', () => {
     const fn = jest.fn(() => 4)
+    const result = fromNumber(2).unwrapOrElse(fn)
 
-    // Act
-    const result = option.unwrapOrDo(fn)
-
-    // Assert
     expect(result).toEqual(2)
     expect(fn).toHaveBeenCalledTimes(0)
   })
 
-  test("option.unwrapOrDo of None should return the fallback function's result", () => {
-    // Arrange
-    const option = none() as Option<number>
+  test("option.unwrapOrElse of None should return the fallback function's result", () => {
     const fn = jest.fn(() => 4)
+    const result = fromNumber(-1).unwrapOrElse(fn)
 
-    // Act
-    const result = option.unwrapOrDo(fn)
+    expect(result).toEqual(4)
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+})
 
-    // Assert
+describe('unwrapOrElseAsync', () => {
+  test('option.unwrapOrElseAsync of Some unwraps the inner value and does nothing', async () => {
+    const fn = jest.fn(async () => 4)
+    const result = await fromNumber(2).unwrapOrElseAsync(fn)
+
+    expect(result).toEqual(2)
+    expect(fn).toHaveBeenCalledTimes(0)
+  })
+
+  test("option.unwrapOrElseAsync of None should return the fallback function's result", async () => {
+    const fn = jest.fn(async () => 4)
+    const result = await fromNumber(-1).unwrapOrElseAsync(fn)
+
     expect(result).toEqual(4)
     expect(fn).toHaveBeenCalledTimes(1)
   })
@@ -228,48 +244,24 @@ describe('unwrapOrDo', () => {
 
 describe('isNone', () => {
   test('option.isNone of Some should return false', () => {
-    // Arrange
-    const option = some(2)
-
-    // Act
-    const result = option.isNone()
-
-    // Assert
-    expect(result).toEqual(false)
+    expect(fromNumber(2).isNone()).toBe(false)
   })
 
   test('option.isNone of None should return true', () => {
-    // Arrange
-    const option = none()
-
-    // Act
-    const result = option.isNone()
-
-    // Assert
-    expect(result).toEqual(true)
+    expect(fromNumber(-1).isNone()).toBe(true)
   })
 })
 
 describe('isSome', () => {
   test('option.isSome of Some should return true', () => {
-    // Arrange
-    const option = some(2)
-
-    // Act
-    const result = option.isSome()
-
-    // Assert
-    expect(result).toEqual(true)
+    expect(fromNumber(2).isSome()).toBe(true)
   })
 
   test('option.isSome of None should return false', () => {
-    // Arrange
-    const option = none()
-
-    // Act
-    const result = option.isSome()
-
-    // Assert
-    expect(result).toEqual(false)
+    expect(fromNumber(-1).isSome()).toBe(false)
   })
 })
+
+function fromNumber(x: number) {
+  return x > 0 ? some(x) : none()
+}

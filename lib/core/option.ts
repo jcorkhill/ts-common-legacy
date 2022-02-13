@@ -20,6 +20,15 @@ export interface Option<T> {
   map<U>(f: (t: T) => U): Option<U>
 
   /**
+   * Performs the asynchronous mapping operation `f` if the inner value is
+   * `Some(T)`.
+   *
+   * @param f
+   * A function that maps inner value `T` to `U` if `T` is `Some(T)`.
+   */
+  mapAsync<U>(f: (t: T) => Promise<U>): Promise<Option<U>>
+
+  /**
    * Performs the mapping operation `f` and flattens the result if the
    * inner value is `Some(T)`.
    *
@@ -30,6 +39,16 @@ export interface Option<T> {
   chain<U>(f: (t: T) => Option<U>): Option<U>
 
   /**
+   * Performs the asynchronous mapping operation `f` and flattens the result
+   * if the inner value is `Some(T)`.
+   *
+   * @param f
+   * A function that maps inner value `T` to `Option<U>` if `T` is
+   * `Some(T)`.
+   */
+  chainAsync<U>(f: (t: T) => Promise<Option<U>>): Promise<Option<U>>
+
+  /**
    * Executes the given predicate function if the current Option is a `Some(T)`,
    * returns `None` otherwise.
    *
@@ -37,6 +56,15 @@ export interface Option<T> {
    * predicate evaluates to `false`, returns `None`.
    */
   filter(f: (t: T) => boolean): Option<T>
+
+  /**
+   * Executes the given asynchronous predicate function if the current Option is
+   * `Some(T)`, returns `None` otherwise.
+   *
+   * If the predicate evaluates to `true`, returns the current option. If the
+   * predicate evaluates to `false`, returns `None`.
+   */
+  filterAsync(f: (t: T) => Promise<boolean>): Promise<Option<T>>
 
   /**
    * Executes the variant arm that matches the current Option.
@@ -57,6 +85,17 @@ export interface Option<T> {
    * The function to apply on the inner value.
    */
   forEach(f: (t: T) => void): void
+
+  /**
+   * Executes the given asynchronous function for the inner value contained
+   * in the Option.
+   *
+   * Use this to perform effects.
+   *
+   * @param f
+   * The function to apply on the inner value.
+   */
+  forEachAsync(f: (t: T) => Promise<void>): void
 
   /**
    * Unwraps the inner value if `Some(T)`, throws an error if `None`.
@@ -86,7 +125,17 @@ export interface Option<T> {
    * The default function to execute and from which to return if the Option
    * is `None`.
    */
-  unwrapOrDo(f: () => T): T
+  unwrapOrElse(f: () => T): T
+
+  /**
+   * Unwraps the inner value if `Some(T)`, returns the result of the specified
+   * asynchronous fallback function if `None`.
+   *
+   * @param f
+   * The default function to execute and from which to return if the Option
+   * is `None`.
+   */
+  unwrapOrElseAsync(f: () => Promise<T>): T | Promise<T>
 
   /**
    * Indicates whether the Option is a `None`.
@@ -136,6 +185,13 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
       })
     },
 
+    mapAsync<U>(f: (t: T) => Promise<U>): Promise<Option<U>> {
+      return this.match({
+        Some: (t) => f(t).then(some),
+        None: () => Promise.resolve(none()),
+      })
+    },
+
     chain<U>(f: (t: T) => Option<U>): Option<U> {
       return this.match({
         Some: (t) => f(t),
@@ -143,10 +199,24 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
       })
     },
 
+    chainAsync<U>(f: (t: T) => Promise<Option<U>>): Promise<Option<U>> {
+      return this.match({
+        Some: (t) => f(t),
+        None: () => Promise.resolve(none()),
+      })
+    },
+
     filter(f: (t: T) => boolean): Option<T> {
       return this.match({
         Some: (t) => (f(t) ? this : none()),
         None: none,
+      })
+    },
+
+    filterAsync(f: (t: T) => Promise<boolean>): Promise<Option<T>> {
+      return this.match({
+        Some: (t) => f(t).then((r) => (r ? this : none())),
+        None: () => Promise.resolve(none()),
       })
     },
 
@@ -161,22 +231,36 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
       })
     },
 
-    unwrap() {
+    forEachAsync(f: (t: T) => Promise<void>): Promise<void> {
+      return this.match({
+        Some: f,
+        None: () => Promise.resolve(),
+      })
+    },
+
+    unwrap(): T {
       return this.match({
         Some: identity,
         None: throws(() => new Error('Cannot unwrap an Option of "None"')),
       })
     },
 
-    unwrapOr(u: T) {
+    unwrapOr(u: T): T {
       return this.match({
         Some: identity,
         None: () => u,
       })
     },
 
-    unwrapOrDo(f: () => T) {
+    unwrapOrElse(f: () => T): T {
       return this.match({
+        Some: identity,
+        None: f,
+      })
+    },
+
+    unwrapOrElseAsync(f: () => Promise<T>): T | Promise<T> {
+      return this.match<T | Promise<T>>({
         Some: identity,
         None: f,
       })
