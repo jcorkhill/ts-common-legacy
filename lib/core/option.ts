@@ -194,14 +194,14 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
 
     chain<U>(f: (t: T) => Option<U>): Option<U> {
       return this.match({
-        Some: (t) => f(t),
+        Some: f,
         None: none,
       })
     },
 
     chainAsync<U>(f: (t: T) => Promise<Option<U>>): Promise<Option<U>> {
       return this.match({
-        Some: (t) => f(t),
+        Some: f,
         None: () => Promise.resolve(none()),
       })
     },
