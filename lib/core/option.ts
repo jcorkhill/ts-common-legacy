@@ -11,19 +11,19 @@ import { Nullable } from './types/nullable'
  */
 export interface Option<T> {
   /**
-   * Performs the mapping operation `f` if the inner value is a `Some`.
+   * Performs the mapping operation `f` if the inner value is `Some(T)`.
    *
    * @param f
-   * A function that maps inner value `T` to `U` if `T` is a `Some`.
+   * A function that maps inner value `T` to `U` if `T` is `Some(T)`.
    */
   map<U>(f: (t: T) => U): Option<U>
 
   /**
    * Performs the mapping operation `f` and flattens the result if the
-   * inner value is a `Some`.
+   * inner value is `Some(T)`.
    *
    * @param f
-   * A function that maps inner value `T` to `Option<U>` if `T` is a
+   * A function that maps inner value `T` to `Option<U>` if `T` is
    * `Some`.
    */
   chain<U>(f: (t: T) => Option<U>): Option<U>
@@ -48,7 +48,9 @@ export interface Option<T> {
   match<R>(patterns: IOptionMatchPatterns<T, R>): R
 
   /**
-   * Executes the given function for each inner value contained in the Option.
+   * Executes the given function for inner value contained in the Option.
+   *
+   * Use this to perform effects.
    *
    * @param f
    * The function to apply on the inner value.
@@ -101,12 +103,12 @@ export interface Option<T> {
  */
 export interface IOptionMatchPatterns<TValue, TResult> {
   /**
-   * Executed if the `Option` is a "None".
+   * Executed if the `Option` is `None(T)`.
    */
   None: () => TResult
 
   /**
-   * Executed if the `Option` has a `Some(T)`.
+   * Executed if the `Option` i `Some(T)`.
    */
   Some: (t: TValue) => TResult
 }
