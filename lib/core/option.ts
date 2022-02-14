@@ -301,7 +301,7 @@ export function none(): Option<never> {
  * Helper for representing a function of type:
  *
  * ```
- * (o: Option<TOptionInnerValue>) => TResult
+ * Option<TOptionInnerValue> -> TResult
  * ```
  */
 export type OptionOperator<TOptionInnerValue, TResult> = UnaryFunction<
@@ -313,7 +313,44 @@ export type OptionOperator<TOptionInnerValue, TResult> = UnaryFunction<
  * Signatures for higher-order option functions for use in
  * pipeline operations.
  */
-interface IOptionHigherOrderFunctions {
+interface IOptionOperators {
+  /**
+   * Performs the mapping operation `f` if the inner value is `Some(T)`.
+   *
+   * @param f
+   * A function that maps inner value `T` to `U` if `T` is `Some(T)`.
+   */
+  map<T, U>(f: (t: T) => U): OptionOperator<T, Option<U>>
+
+  /**
+   * Performs the asynchronous mapping operation `f` if the inner value is
+   * `Some(T)`.
+   *
+   * @param f
+   * A function that maps inner value `T` to `U` if `T` is `Some(T)`.
+   */
+  mapAsync<T, U>(f: (t: T) => Promise<U>): OptionOperator<T, Promise<Option<U>>>
+
+  /**
+   * Executes the given predicate function if the current Option is a `Some(T)`,
+   * returns `None` otherwise.
+   *
+   * If the predicate evaluates to `true`, returns the current option. If the
+   * predicate evaluates to `false`, returns `None`.
+   */
+  filter<T>(f: (t: T) => boolean): OptionOperator<T, Option<T>>
+
+  /**
+   * Executes the given asynchronous predicate function if the current Option is
+   * `Some(T)`, returns `None` otherwise.
+   *
+   * If the predicate evaluates to `true`, returns the current option. If the
+   * predicate evaluates to `false`, returns `None`.
+   */
+  filterAsync<T>(
+    f: (t: T) => Promise<boolean>
+  ): OptionOperator<T, Promise<Option<T>>>
+
   /**
    * Performs the mapping operation `f` and flattens the result if the
    * inner value is `Some(T)`.
@@ -356,10 +393,18 @@ interface IOptionHigherOrderFunctions {
 }
 
 /**
- * Higher order Option Monad methods. Useful for pipeline
+ * Option Monad operator methods. Useful for pipeline
  * operations.
  */
-export const Option: IOptionHigherOrderFunctions = {
+export const Option: IOptionOperators = {
+  map<T, U>(f: (t: T) => U) {
+    return (o: Option<T>) => o.map(f)
+  },
+
+  mapAsync<T, U>(f: (t: T) => Promise<U>) {
+    return (o: Option<T>) => o.mapAsync(f)
+  },
+
   chain<T, U>(f: (t: T) => Option<U>) {
     return (o: Option<T>) => o.chain(f)
   },
@@ -370,6 +415,14 @@ export const Option: IOptionHigherOrderFunctions = {
         Some: f,
         None: () => Promise.resolve(none()),
       })
+  },
+
+  filter<T>(f: (t: T) => boolean) {
+    return (o: Option<T>) => o.filter(f)
+  },
+
+  filterAsync<T>(f: (t: T) => Promise<boolean>) {
+    return (o: Option<T>) => o.filterAsync(f)
   },
 
   unwrap<T>() {

@@ -287,6 +287,46 @@ describe('toOption', () => {
 })
 
 describe('higher-order option functions', () => {
+  describe('map', () => {
+    test('Option.map of Some maps the inner value correctly', () => {
+      expect(
+        testPipe(
+          fromNumber(2),
+          Option.map((x) => x * 2)
+        ).unwrap()
+      ).toEqual(4)
+    })
+
+    test('Option.map of None returns None', () => {
+      expect(
+        testPipe(
+          fromNumber(-1),
+          Option.map((x) => x * 2)
+        ).isNone()
+      ).toBe(true)
+    })
+  })
+
+  describe('mapAsync', () => {
+    test('option.mapAsync of Some maps the inner value correctly', async () => {
+      expect(
+        await testPipe(
+          fromNumber(2),
+          Option.mapAsync((x) => Promise.resolve(x * 2))
+        ).then(Option.unwrap())
+      ).toEqual(4)
+    })
+
+    test('option.mapAsync of None returns None', async () => {
+      expect(
+        await testPipe(
+          fromNumber(-1),
+          Option.mapAsync((x) => Promise.resolve(x))
+        ).then(Option.isNone())
+      ).toBe(true)
+    })
+  })
+
   describe('chain', () => {
     test('Option.chain of Some maps and flattens the result', () => {
       expect(
@@ -335,6 +375,66 @@ describe('higher-order option functions', () => {
         await testPipe(
           fromNumber(2),
           Option.chainAsync(async () => none())
+        ).then(Option.isNone())
+      ).toBe(true)
+    })
+  })
+
+  describe('filter', () => {
+    test('Option.filter of None returns None', () => {
+      expect(
+        testPipe(
+          fromNumber(-1),
+          Option.filter((x) => x > 0)
+        ).isNone()
+      ).toBe(true)
+    })
+
+    test('Option.filter of some returns itself when filter is satisfied', () => {
+      const original = fromNumber(2)
+      expect(
+        testPipe(
+          original,
+          Option.filter((x) => x > 0)
+        )
+      ).toBe(original)
+    })
+
+    test('Option.filter of Some returns None when filter fails', () => {
+      expect(
+        testPipe(
+          fromNumber(2),
+          Option.filter((x) => x < 0)
+        ).isNone()
+      ).toBe(true)
+    })
+  })
+
+  describe('filterAsync', () => {
+    test('Option.filterAsync of None returns None', async () => {
+      expect(
+        await testPipe(
+          fromNumber(-1),
+          Option.filterAsync(async (x) => x > 0)
+        ).then(Option.isNone())
+      ).toBe(true)
+    })
+
+    test('Option.filterAsync of Some returns itself when filter is satisfied', async () => {
+      const original = fromNumber(2)
+      expect(
+        await testPipe(
+          original,
+          Option.filterAsync(async (x) => x > 0)
+        )
+      ).toBe(original)
+    })
+
+    test('Option.filterAsync of Some returns None when filter fails', async () => {
+      expect(
+        await testPipe(
+          fromNumber(2),
+          Option.filterAsync(async (x) => x < 0)
         ).then(Option.isNone())
       ).toBe(true)
     })
