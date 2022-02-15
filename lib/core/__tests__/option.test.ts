@@ -178,9 +178,9 @@ describe('forEachAsync', () => {
     expect(fn).toHaveBeenCalledWith(2)
   })
 
-  test('option.forEachAsync of None never runs the function', () => {
+  test('option.forEachAsync of None never runs the function', async () => {
     const fn = jest.fn()
-    fromNumber(-1).forEachAsync(fn)
+    await fromNumber(-1).forEachAsync(fn)
 
     expect(fn).toHaveBeenCalledTimes(0)
   })
@@ -286,7 +286,7 @@ describe('toOption', () => {
   })
 })
 
-describe('higher-order option functions', () => {
+describe('option operators', () => {
   describe('map', () => {
     test('Option.map of Some maps the inner value correctly', () => {
       expect(
@@ -440,6 +440,40 @@ describe('higher-order option functions', () => {
     })
   })
 
+  describe('forEach', () => {
+    test('Option.forEach of Some runs the function once for the inner value', () => {
+      const fn = jest.fn()
+      testPipe(fromNumber(2), Option.forEach(fn))
+
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith(2)
+    })
+
+    test('Option.forEach of None never runs the function', () => {
+      const fn = jest.fn()
+      testPipe(fromNumber(-1), Option.forEach(fn))
+
+      expect(fn).toHaveBeenCalledTimes(0)
+    })
+  })
+
+  describe('forEachAsync', () => {
+    test('Option.forEachAsync of Some runs the function once for the inner value', async () => {
+      const fn = jest.fn()
+      await testPipe(fromNumber(2), Option.forEachAsync(fn))
+
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith(2)
+    })
+
+    test('Option.forEachAsync of None never runs the function', async () => {
+      const fn = jest.fn()
+      await testPipe(fromNumber(-1), Option.forEachAsync(fn))
+
+      expect(fn).toHaveBeenCalledTimes(0)
+    })
+  })
+
   describe('unwrap', () => {
     test('Option.unwrap of Some unwraps the inner value', () => {
       expect(testPipe(fromNumber(2), Option.unwrap())).toEqual(2)
@@ -447,6 +481,52 @@ describe('higher-order option functions', () => {
 
     test('Option.unwrap of None throws an error', () => {
       expect(() => testPipe(fromNumber(-1), Option.unwrap())).toThrowError()
+    })
+  })
+
+  describe('unwrapOr', () => {
+    test('Option.unwrapOr of Some unwraps the inner value', () => {
+      expect(testPipe(fromNumber(2), Option.unwrapOr(4))).toEqual(2)
+    })
+
+    test('Option.unwrapOr of None returns the fallback value', () => {
+      expect(testPipe(fromNumber(-1), Option.unwrapOr(4))).toEqual(4)
+    })
+  })
+
+  describe('unwrapOrElse', () => {
+    test('Option.unwrapOrElse of Some unwraps the inner value and does nothing', () => {
+      const fn = jest.fn(() => 4)
+      expect(testPipe(fromNumber(2), Option.unwrapOrElse(fn))).toEqual(2)
+
+      expect(fn).toHaveBeenCalledTimes(0)
+    })
+
+    test("Option.unwrapOrElse of None should return the fallback function's result", () => {
+      const fn = jest.fn(() => 4)
+      expect(testPipe(fromNumber(-1), Option.unwrapOrElse(fn))).toEqual(4)
+
+      expect(fn).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('unwrapOrElseAsync', () => {
+    test('Option.unwrapOrElseAsync of Some unwraps the inner value and does nothing', async () => {
+      const fn = jest.fn(async () => 4)
+      expect(
+        await testPipe(fromNumber(2), Option.unwrapOrElseAsync(fn))
+      ).toEqual(2)
+
+      expect(fn).toHaveBeenCalledTimes(0)
+    })
+
+    test("Option.unwrapOrElseAsync of None should return the fallback function's result", async () => {
+      const fn = jest.fn(async () => 4)
+      expect(
+        await testPipe(fromNumber(-1), Option.unwrapOrElseAsync(fn))
+      ).toEqual(4)
+
+      expect(fn).toHaveBeenCalledTimes(1)
     })
   })
 

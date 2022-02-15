@@ -95,7 +95,7 @@ export interface Option<T> {
    * @param f
    * The function to apply on the inner value.
    */
-  forEachAsync(f: (t: T) => Promise<void>): void
+  forEachAsync(f: (t: T) => Promise<void>): Promise<void>
 
   /**
    * Unwraps the inner value if `Some(T)`, throws an error if `None`.
@@ -374,12 +374,65 @@ interface IOptionOperators {
   ): OptionOperator<T, Promise<Option<U>>>
 
   /**
+   * Executes the given function for inner value contained in the Option.
+   *
+   * Use this to perform effects.
+   *
+   * @param f
+   * The function to apply on the inner value.
+   */
+  forEach<T>(f: (t: T) => void): OptionOperator<T, void>
+
+  /**
+   * Executes the given asynchronous function for the inner value contained
+   * in the Option.
+   *
+   * Use this to perform effects.
+   *
+   * @param f
+   * The function to apply on the inner value.
+   */
+  forEachAsync<T>(f: (t: T) => Promise<void>): OptionOperator<T, Promise<void>>
+
+  /**
    * Unwraps the inner value if `Some(T)`, throws an error if `None`.
    *
    * Prefer `match` or methods that remain within the `monadic` context over
    * this method.
    */
   unwrap<T>(): OptionOperator<T, T>
+
+  /**
+   * Unwraps the inner value if `Some(T)`, returns the specified default if
+   * `None`.
+   *
+   * Prefer `match` or methods that remain within the `monadic` context over
+   * this method.
+   *
+   * @param t
+   * The default value to return if the Option is `None`.
+   */
+  unwrapOr<T>(t: T): OptionOperator<T, T>
+
+  /**
+   * Unwraps the inner value if `Some(T)`, returns the result of the specified
+   * fallback function if `None`.
+   *
+   * @param f
+   * The default function to execute and from which to return if the Option
+   * is `None`.
+   */
+  unwrapOrElse<T>(f: () => T): OptionOperator<T, T>
+
+  /**
+   * Unwraps the inner value if `Some(T)`, returns the result of the specified
+   * asynchronous fallback function if `None`.
+   *
+   * @param f
+   * The default function to execute and from which to return if the Option
+   * is `None`.
+   */
+  unwrapOrElseAsync<T>(f: () => Promise<T>): OptionOperator<T, T | Promise<T>>
 
   /**
    * Indicates whether the Option is `None(T)`.
@@ -397,45 +450,20 @@ interface IOptionOperators {
  * operations.
  */
 export const Option: IOptionOperators = {
-  map<T, U>(f: (t: T) => U) {
-    return (o: Option<T>) => o.map(f)
-  },
-
-  mapAsync<T, U>(f: (t: T) => Promise<U>) {
-    return (o: Option<T>) => o.mapAsync(f)
-  },
-
-  chain<T, U>(f: (t: T) => Option<U>) {
-    return (o: Option<T>) => o.chain(f)
-  },
-
-  chainAsync<T, U>(f: (t: T) => Promise<Option<U>>) {
-    return (o: Option<T>) =>
-      o.match({
-        Some: f,
-        None: () => Promise.resolve(none()),
-      })
-  },
-
-  filter<T>(f: (t: T) => boolean) {
-    return (o: Option<T>) => o.filter(f)
-  },
-
-  filterAsync<T>(f: (t: T) => Promise<boolean>) {
-    return (o: Option<T>) => o.filterAsync(f)
-  },
-
-  unwrap<T>() {
-    return (o: Option<T>) => o.unwrap()
-  },
-
-  isNone<T>() {
-    return (o: Option<T>) => o.isNone()
-  },
-
-  isSome<T>() {
-    return (o: Option<T>) => o.isSome()
-  },
+  map: (f) => (o) => o.map(f),
+  mapAsync: (f) => (o) => o.mapAsync(f),
+  chain: (f) => (o) => o.chain(f),
+  chainAsync: (f) => (o) => o.chainAsync(f),
+  filter: (f) => (o) => o.filter(f),
+  filterAsync: (f) => (o) => o.filterAsync(f),
+  forEach: (f) => (o) => o.forEach(f),
+  forEachAsync: (f) => (o) => o.forEachAsync(f),
+  unwrap: () => (o) => o.unwrap(),
+  unwrapOr: (t) => (o) => o.unwrapOr(t),
+  unwrapOrElse: (f) => (o) => o.unwrapOrElse(f),
+  unwrapOrElseAsync: (f) => (o) => o.unwrapOrElseAsync(f),
+  isNone: () => (o) => o.isNone(),
+  isSome: () => (o) => o.isSome(),
 }
 
 /**
