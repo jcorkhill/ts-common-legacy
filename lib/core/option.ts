@@ -77,7 +77,8 @@ export interface Option<T> {
   match<R>(patterns: IOptionMatchPatterns<T, R>): R
 
   /**
-   * Executes the given function for inner value contained in the Option.
+   * Executes the given function for inner value contained in the Option
+   * if the inner value is `Some(T)`.
    *
    * Use this to perform effects.
    *
@@ -88,7 +89,7 @@ export interface Option<T> {
 
   /**
    * Executes the given asynchronous function for the inner value contained
-   * in the Option.
+   * in the Option if the inner value is `Some(T)`.
    *
    * Use this to perform effects.
    *
