@@ -98,6 +98,28 @@ export interface Option<T> {
   forEachAsync(f: (t: T) => Promise<void>): Promise<void>
 
   /**
+   * Executes the given function for the inner value contained in the Option
+   * if the inner value is `Some(T)`.
+   *
+   * Use this to perform effects.
+   *
+   * @param f
+   * The function to apply on the inner value.
+   */
+  tap(f: (t: T) => void): Option<T>
+
+  /**
+   * Executes the given asynchronous function for the inner value contained in the Option
+   * if the inner value is `Some(T)`.
+   *
+   * Use this to perform effects.
+   *
+   * @param f
+   * The function to apply on the inner value.
+   */
+  tapAsync(f: (t: T) => Promise<void>): Promise<Option<T>>
+
+  /**
    * Unwraps the inner value if `Some(T)`, throws an error if `None`.
    *
    * Prefer `match` or methods that remain within the `monadic` context over
@@ -236,6 +258,15 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
         Some: f,
         None: () => Promise.resolve(),
       })
+    },
+
+    tap(f: (t: T) => void): Option<T> {
+      this.forEach(f)
+      return this
+    },
+
+    tapAsync(f: (t: T) => Promise<void>): Promise<Option<T>> {
+      return this.forEachAsync(f).then(() => this)
     },
 
     unwrap(): T {
@@ -395,6 +426,24 @@ interface IOptionOperators {
   forEachAsync<T>(f: (t: T) => Promise<void>): OptionOperator<T, Promise<void>>
 
   /**
+   * Executes the given function for the inner value contained in the Option
+   * if the inner value is `Some(T)`.
+   *
+   * @param f
+   * The function to apply on the inner value.
+   */
+  tap<T>(f: (t: T) => void): OptionOperator<T, Option<T>>
+
+  /**
+   * Executes the given asynchronous function for the inner value contained in the Option
+   * if the inner value is `Some(T)`.
+   *
+   * @param f
+   * The function to apply on the inner value.
+   */
+  tapAsync<T>(f: (t: T) => Promise<void>): OptionOperator<T, Promise<Option<T>>>
+
+  /**
    * Unwraps the inner value if `Some(T)`, throws an error if `None`.
    *
    * Prefer `match` or methods that remain within the `monadic` context over
@@ -458,6 +507,8 @@ export const Option: IOptionOperators = {
   filterAsync: (f) => (o) => o.filterAsync(f),
   forEach: (f) => (o) => o.forEach(f),
   forEachAsync: (f) => (o) => o.forEachAsync(f),
+  tap: (f) => (o) => o.tap(f),
+  tapAsync: (f) => (o) => o.tapAsync(f),
   unwrap: () => (o) => o.unwrap(),
   unwrapOr: (t) => (o) => o.unwrapOr(t),
   unwrapOrElse: (f) => (o) => o.unwrapOrElse(f),

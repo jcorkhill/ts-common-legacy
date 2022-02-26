@@ -186,6 +186,40 @@ describe('forEachAsync', () => {
   })
 })
 
+describe('tap', () => {
+  test('option.tap of Some runs the function once for the inner value', () => {
+    const fn = jest.fn()
+    fromNumber(2).forEach(fn)
+
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(fn).toHaveBeenCalledWith(2)
+  })
+
+  test('option.tap of None never runs the function', () => {
+    const fn = jest.fn()
+    fromNumber(-1).tap(fn)
+
+    expect(fn).toHaveBeenCalledTimes(0)
+  })
+})
+
+describe('tapAsync', () => {
+  test('option.tapAsync of Some runs the function once for the inner value', async () => {
+    const fn = jest.fn(async (x) => x)
+    fromNumber(2).tapAsync(fn)
+
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(fn).toHaveBeenCalledWith(2)
+  })
+
+  test('option.tapAsync of None never runs the function', () => {
+    const fn = jest.fn(async (x) => x)
+    fromNumber(-1).tapAsync(fn)
+
+    expect(fn).toHaveBeenCalledTimes(0)
+  })
+})
+
 describe('unwrap', () => {
   test('option.unwrap of Some unwraps the inner value', () => {
     expect(fromNumber(2).unwrap()).toEqual(2)
@@ -469,6 +503,40 @@ describe('option operators', () => {
     test('Option.forEachAsync of None never runs the function', async () => {
       const fn = jest.fn()
       await testPipe(fromNumber(-1), Option.forEachAsync(fn))
+
+      expect(fn).toHaveBeenCalledTimes(0)
+    })
+  })
+
+  describe('tap', () => {
+    test('Option.tap of Some runs the function once for the inner value', () => {
+      const fn = jest.fn()
+      testPipe(fromNumber(2), Option.tap(fn))
+
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith(2)
+    })
+
+    test('Option.tap of None never runs the function', () => {
+      const fn = jest.fn()
+      testPipe(fromNumber(-1), Option.tap(fn))
+
+      expect(fn).toHaveBeenCalledTimes(0)
+    })
+  })
+
+  describe('tapAsync', () => {
+    test('Option.tapAsync of Some runs the function once for the inner value', async () => {
+      const fn = jest.fn(async (x) => x)
+      await testPipe(fromNumber(2), Option.tapAsync(fn))
+
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith(2)
+    })
+
+    test('Option.tapAsync of None never runs the function', async () => {
+      const fn = jest.fn()
+      await testPipe(fromNumber(-1), Option.tapAsync(fn))
 
       expect(fn).toHaveBeenCalledTimes(0)
     })
