@@ -1,5 +1,5 @@
-import { Option, toOption } from './option'
-import { err, ok, Result } from './result'
+import { Option } from './option'
+import { err, ok, Result } from './result/result'
 
 /**
  * Failure type for when a key cannot be found.
@@ -84,7 +84,7 @@ function typedMap<TKey, TValue>(
     },
 
     get(key) {
-      return toOption(map.get(key))
+      return Option.of(map.get(key))
     },
 
     has(key) {

@@ -1,8 +1,12 @@
-import { identity } from './identity'
-import { noop } from './noop'
-import { throws } from './throws'
-import { UnaryFunction } from './types/funcs'
-import { Nullable } from './types/nullable'
+import { IOptionExtensions } from '.'
+import { identity } from '../identity'
+import { noop } from '../noop'
+import { IPipeable, structurePipe } from '../pipeable'
+import { throws } from '../throws'
+import { UnaryFunction } from '../types/funcs'
+import { Nullable } from '../types/nullable'
+import { of } from './extensions/of'
+import { toResult } from './extensions/toResult'
 
 /**
  * The Option Monad.
@@ -10,7 +14,7 @@ import { Nullable } from './types/nullable'
  * Encases a possibly optional value and permits performing
  * operations on it in a consistent and type-agnostic manner.
  */
-export interface Option<T> {
+export interface Option<T> extends IPipeable<Option<T>> {
   /**
    * Performs the mapping operation `f` if the inner value is `Some(T)`.
    *
@@ -305,6 +309,10 @@ export function createOption<T>(value: Nullable<T>): Option<T> {
     isSome() {
       return isSome
     },
+
+    pipe(...args: UnaryFunction<any, any>[]) {
+      return structurePipe(this, ...args)
+    },
   }
 }
 
@@ -330,176 +338,10 @@ export function none(): Option<never> {
 }
 
 /**
- * Helper for representing a function of type:
- *
- * ```
- * Option<TOptionInnerValue> -> TResult
- * ```
+ * Option Monad operator and methods. Useful for pipeline operations.
  */
-export type OptionOperator<TOptionInnerValue, TResult> = UnaryFunction<
-  Option<TOptionInnerValue>,
-  TResult
->
-
-/**
- * Signatures for higher-order option functions for use in
- * pipeline operations.
- */
-interface IOptionOperators {
-  /**
-   * Performs the mapping operation `f` if the inner value is `Some(T)`.
-   *
-   * @param f
-   * A function that maps inner value `T` to `U` if `T` is `Some(T)`.
-   */
-  map<T, U>(f: (t: T) => U): OptionOperator<T, Option<U>>
-
-  /**
-   * Performs the asynchronous mapping operation `f` if the inner value is
-   * `Some(T)`.
-   *
-   * @param f
-   * A function that maps inner value `T` to `U` if `T` is `Some(T)`.
-   */
-  mapAsync<T, U>(f: (t: T) => Promise<U>): OptionOperator<T, Promise<Option<U>>>
-
-  /**
-   * Executes the given predicate function if the current Option is a `Some(T)`,
-   * returns `None` otherwise.
-   *
-   * If the predicate evaluates to `true`, returns the current option. If the
-   * predicate evaluates to `false`, returns `None`.
-   */
-  filter<T>(f: (t: T) => boolean): OptionOperator<T, Option<T>>
-
-  /**
-   * Executes the given asynchronous predicate function if the current Option is
-   * `Some(T)`, returns `None` otherwise.
-   *
-   * If the predicate evaluates to `true`, returns the current option. If the
-   * predicate evaluates to `false`, returns `None`.
-   */
-  filterAsync<T>(
-    f: (t: T) => Promise<boolean>
-  ): OptionOperator<T, Promise<Option<T>>>
-
-  /**
-   * Performs the mapping operation `f` and flattens the result if the
-   * inner value is `Some(T)`.
-   *
-   * @param f
-   * A function that maps inner value `T` to `Option<U>` if `T` is
-   * `Some`.
-   */
-  chain<T, U>(f: (t: T) => Option<U>): OptionOperator<T, Option<U>>
-
-  /**
-   * Performs the asynchronous mapping operation `f` and flattens the result
-   * if the inner value is `Some(T)`.
-   *
-   * @param f
-   * A function that maps inner value `T` to `Option<U>` if `T` is
-   * `Some(T)`.
-   */
-  chainAsync<T, U>(
-    f: (t: T) => Promise<Option<U>>
-  ): OptionOperator<T, Promise<Option<U>>>
-
-  /**
-   * Executes the given function for inner value contained in the Option.
-   *
-   * Use this to perform effects.
-   *
-   * @param f
-   * The function to apply on the inner value.
-   */
-  forEach<T>(f: (t: T) => void): OptionOperator<T, void>
-
-  /**
-   * Executes the given asynchronous function for the inner value contained
-   * in the Option.
-   *
-   * Use this to perform effects.
-   *
-   * @param f
-   * The function to apply on the inner value.
-   */
-  forEachAsync<T>(f: (t: T) => Promise<void>): OptionOperator<T, Promise<void>>
-
-  /**
-   * Executes the given function for the inner value contained in the Option
-   * if the inner value is `Some(T)`.
-   *
-   * @param f
-   * The function to apply on the inner value.
-   */
-  tap<T>(f: (t: T) => void): OptionOperator<T, Option<T>>
-
-  /**
-   * Executes the given asynchronous function for the inner value contained in the Option
-   * if the inner value is `Some(T)`.
-   *
-   * @param f
-   * The function to apply on the inner value.
-   */
-  tapAsync<T>(f: (t: T) => Promise<void>): OptionOperator<T, Promise<Option<T>>>
-
-  /**
-   * Unwraps the inner value if `Some(T)`, throws an error if `None`.
-   *
-   * Prefer `match` or methods that remain within the `monadic` context over
-   * this method.
-   */
-  unwrap<T>(): OptionOperator<T, T>
-
-  /**
-   * Unwraps the inner value if `Some(T)`, returns the specified default if
-   * `None`.
-   *
-   * Prefer `match` or methods that remain within the `monadic` context over
-   * this method.
-   *
-   * @param t
-   * The default value to return if the Option is `None`.
-   */
-  unwrapOr<T>(t: T): OptionOperator<T, T>
-
-  /**
-   * Unwraps the inner value if `Some(T)`, returns the result of the specified
-   * fallback function if `None`.
-   *
-   * @param f
-   * The default function to execute and from which to return if the Option
-   * is `None`.
-   */
-  unwrapOrElse<T>(f: () => T): OptionOperator<T, T>
-
-  /**
-   * Unwraps the inner value if `Some(T)`, returns the result of the specified
-   * asynchronous fallback function if `None`.
-   *
-   * @param f
-   * The default function to execute and from which to return if the Option
-   * is `None`.
-   */
-  unwrapOrElseAsync<T>(f: () => Promise<T>): OptionOperator<T, T | Promise<T>>
-
-  /**
-   * Indicates whether the Option is `None(T)`.
-   */
-  isNone<T>(): OptionOperator<T, boolean>
-
-  /**
-   * Indicates whether the Option is `Some(T)`.
-   */
-  isSome<T>(): OptionOperator<T, boolean>
-}
-
-/**
- * Option Monad operator methods. Useful for pipeline
- * operations.
- */
-export const Option: IOptionOperators = {
+export const Option: IOptionExtensions = {
+  // Primary Operators
   map: (f) => (o) => o.map(f),
   mapAsync: (f) => (o) => o.mapAsync(f),
   chain: (f) => (o) => o.chain(f),
@@ -516,30 +358,10 @@ export const Option: IOptionOperators = {
   unwrapOrElseAsync: (f) => (o) => o.unwrapOrElseAsync(f),
   isNone: () => (o) => o.isNone(),
   isSome: () => (o) => o.isSome(),
-}
 
-/**
- * Lifts the given value into an `Option<T>` based on the following criteria.
- * 
- * If the value is `null` - `None`.
- * if the value is `undefined` - `None`.
- * If the value is an empty string - `None`.
- * Otherwise - `Some`.
- * 
- * @param value 
- * The value to lift into an Option.
+  // Operator Extensions
+  toResult,
 
- * @returns 
- * An `Option<T>`.
- */
-export function toOption<T>(value: T | null | undefined): Option<T> {
-  if (value === null || value === undefined) {
-    return none()
-  }
-
-  if (typeof value === 'string' && value.length === 0) {
-    return none()
-  }
-
-  return some(value)
+  // Extensions
+  of,
 }
