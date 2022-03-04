@@ -1,4 +1,5 @@
 import { IResultMatchPatterns, Result } from '..'
+import { Option } from '../../option'
 import { UnaryFunction } from '../../types/funcs'
 
 /**
@@ -141,4 +142,13 @@ interface IResultOperators {
   isOk<E, T>(): ResultOperator<E, T, boolean>
 }
 
-export interface IResultExtensions extends IResultOperators {}
+export interface IResultOperatorExtensions {
+  /**
+   *  Converts the `Result<E, T>` into an `Option<T>` if Self is `Ok(T)`.
+   */
+  toOption<E, T>(): ResultOperator<E, T, Option<T>>
+}
+
+export interface IResultExtensions
+  extends IResultOperators,
+    IResultOperatorExtensions {}

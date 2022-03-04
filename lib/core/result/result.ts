@@ -1,3 +1,4 @@
+import { toOption } from './extensions/toOption'
 import { IResultExtensions } from '.'
 import { identity } from '../identity'
 import { IPipeable, structurePipe } from '../pipeable'
@@ -278,6 +279,7 @@ export function err<E, T = never>(error: E): Result<E, T> {
  * operations.
  */
 export const Result: IResultExtensions = {
+  // Primary Operators
   map: (f) => (r) => r.map(f),
   mapAsync: (f) => (r) => r.mapAsync(f),
   mapErr: (f) => (r) => r.mapErr(f),
@@ -291,4 +293,7 @@ export const Result: IResultExtensions = {
   unwrapOrElseAsync: (f) => (r) => r.unwrapOrElseAsync(f),
   isErr: () => (r) => r.isErr(),
   isOk: () => (r) => r.isOk(),
+
+  // Operator Extensions
+  toOption,
 }

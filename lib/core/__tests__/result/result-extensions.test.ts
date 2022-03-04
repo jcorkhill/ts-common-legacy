@@ -219,6 +219,19 @@ describe('result extensions', () => {
   })
 })
 
+describe('toOption', () => {
+  test('Result.toOption of Ok should return Some', () => {
+    const option = fromNumber(2).pipe(Result.toOption())
+    expect(option.isSome()).toBe(true)
+    expect(option.unwrap()).toBe(2)
+  })
+
+  test('Result.toOption of Err should return None', () => {
+    const option = fromNumber(-1).pipe(Result.toOption())
+    expect(option.isNone()).toBe(true)
+  })
+})
+
 type CannotBeNegativeError = {
   tag: 'CannotBeNegativeError'
   value: number
